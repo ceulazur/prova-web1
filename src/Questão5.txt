@@ -1,0 +1,204 @@
+O uso de Contextos pode resolver o problema de PROPS DRILLING simplesmete por fazer com que uma informação seja compartilhada  com todos os componentes sem a necessidade de isso ocorrer em cadeia. 
+É como se você colocasse todos os componentes em uma sala e colocasse em um slide as informações que você deseja que todos saibam. 
+Ou como se eles (os componentes) fossem pessoas passando pela times square, uma atrás da outra e você transmitisse nos telões o que deseja que todos saibam, é só quem precisa da informação olhar para cima para saber do que se trata.
+O componente x ou y, pode não usar aquela informação na hora, mas ficará na memoria dele de todo jeito caso precise dela em algum momento.
+A informação com context é assim, compartilhada globalmente, o que facilita o trabalho e gera menos problemas, já que eu comparo o props drilling como a brincadeira de telefone sem fio. 
+Até X receber a mensagem de A demora, pode causar mal entendidos que terão que ser corrigidos no meio do caminho e esse tipo de coisa.
+enfim, agora vamos para um exemplo de uso de context!!!
+
+
+*exemplo sem context:
+
+//app.js
+
+import React from 'react';
+import ExibirFamilia from './exibicatfam';
+
+function App() {
+  const familia = {
+    mae: 'Jhordanna',
+    gatinhos: ['Neblina', 'Nuri'],
+    avo: 'Rachel',
+    bisavo: 'Chica'
+  };
+
+  return (
+    <div className="App">
+      <h1>Informações da Família</h1>
+      <ExibirFamilia familia={familia} />
+    </div>
+  );
+}
+
+export default App;
+
+//exbicatfam.js
+
+import React from 'react';
+
+const ExibirFamilia = ({ familia }) => {
+  const { mae, gatinhos, avo, bisavo } = familia;
+
+  return (
+    <div>
+      <h2>Informações da Família</h2>
+      <p>Mãe: {mae}</p>
+      <p>Gatinhos:</p>
+      <ul>
+        {gatinhos.map((gatinho, index) => (
+          <li key={index}>{gatinho}</li>
+        ))}
+      </ul>
+      <p>Avó: {avo}</p>
+      <p>Bisavó: {bisavo}</p>
+    </div>
+  );
+};
+
+export default ExibirFamilia;
+
+
+**solução com context:
+
+//App.js
+
+import React from 'react';
+import { FamiliaProvider } from './fam-context';
+import ExibirFamilia from './exibicat-context';
+
+function App() {
+  return (
+    <FamiliaProvider>
+      <div className="App">
+        <h1>Informações da Família</h1>
+        <ExibirFamilia />
+      </div>
+    </FamiliaProvider>
+  );
+}
+
+export default App;
+
+//fam-context.js
+
+import React, { createContext, useContext } from 'react';
+
+// Criando o Contexto
+const FamiliaContext = createContext();
+
+// Componente Provedor de Contexto
+export const FamiliaProvider = ({ children }) => {
+  const familia = {
+    mae: 'Jhordanna',
+    gatinhos: ['Neblina', 'Nuri'],
+    avo: 'Rachel',
+    bisavo: 'Chica'
+  };
+
+  return (
+    <FamiliaContext.Provider value={familia}>
+      {children}
+    </FamiliaContext.Provider>
+  );
+};
+
+// Hook para consumir o contexto
+export const useFamilia = () => useContext(FamiliaContext);
+
+//exbicatfam-context.js
+import React from 'react';
+import { useFamilia } from './fam-context';
+
+const ExibirFamilia = () => {
+  const { mae, gatinhos, avo, bisavo } = useFamilia();
+
+  return (
+    <div>
+      <h2>Informações da Família</h2>
+      <p>Mãe: {mae}</p>
+      <p>Gatinhos:</p>
+      <ul>
+        {gatinhos.map((gatinho, index) => (
+          <li key={index}>{gatinho}</li>
+        ))}
+      </ul>
+      <p>Avó: {avo}</p>
+      <p>Bisavó: {bisavo}</p>
+    </div>
+  );
+};
+
+export default ExibirFamilia;
+
+
+
+*outro exemplo, mais simples
+ //com props:
+
+ function Pai() {
+  const dados = { nome: 'João', idade: 30 };
+  
+  return (
+    <Filho1 dados={dados} />
+  );
+}
+
+function Filho1({ dados }) {
+  return (
+    <Filho2 dados={dados} />
+  );
+}
+
+function Filho2({ dados }) {
+  return (
+    <Filho3 dados={dados} />
+  );
+}
+
+function Filho3({ dados }) {
+  return (
+    <div>
+      Nome: {dados.nome}, Idade: {dados.idade}
+    </div>
+  );
+}
+
+//com context:
+import React, { createContext, useContext } from 'react';
+
+// Criando o Contexto
+const DadosContext = createContext();
+
+// Componente Pai
+function Pai() {
+  const dados = { nome: 'João', idade: 30 };
+
+  return (
+    <DadosContext.Provider value={dados}>
+      <Filho1 />
+    </DadosContext.Provider>
+  );
+}
+
+// Componente Filho1 (não precisa passar dados explicitamente)
+function Filho1() {
+  return <Filho2 />;
+}
+
+// Componente Filho2 (não precisa passar dados explicitamente)
+function Filho2() {
+  return <Filho3 />;
+}
+
+// Componente Filho3 (consome o contexto diretamente)
+function Filho3() {
+  const dados = useContext(DadosContext);
+
+  return (
+    <div>
+      Nome: {dados.nome}, Idade: {dados.idade}
+    </div>
+  );
+}
+
+export default Pai;
